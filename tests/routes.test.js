@@ -7,8 +7,10 @@ describe('API Endpoint Tests', () => {
       const response = await request(app).get('/');
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('message', 'Welcome to the Express API');
-      expect(response.body).toHaveProperty('version', '1.0.0');
+      expect(response.body).toHaveProperty('message', 'Welcome to the API');
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('message', 'Welcome to the Express API');
+      expect(response.body.data).toHaveProperty('version', '1.0.0');
     });
   });
 
@@ -17,7 +19,10 @@ describe('API Endpoint Tests', () => {
       const response = await request(app).get('/health');
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('status', 'ok');
+      expect(response.body).toHaveProperty('message', 'Server is healthy');
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('status', 'ok');
+      expect(response.body.data).toHaveProperty('timestamp');
     });
   });
 

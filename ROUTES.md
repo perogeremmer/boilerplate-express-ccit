@@ -12,6 +12,22 @@ http://localhost:3000
 
 ---
 
+## Response Format
+
+All responses follow this template:
+
+```json
+{
+  "message": "Description of what happened",
+  "data": ...
+}
+```
+
+- `message` (string) - Description of the result
+- `data` (any) - Can be: `null`, `{}` (empty object), `{...}` (single object), or `[{...}]` (array)
+
+---
+
 ## Routes Overview
 
 ### Health Check
@@ -23,8 +39,11 @@ Check the server status and health.
 **Response:**
 ```json
 {
-  "status": "ok",
-  "timestamp": "2026-02-10T18:02:54.150Z"
+  "message": "Server is healthy",
+  "data": {
+    "status": "ok",
+    "timestamp": "2026-02-10T18:02:54.150Z"
+  }
 }
 ```
 
@@ -42,8 +61,11 @@ Returns a welcome message.
 **Response:**
 ```json
 {
-  "message": "Welcome to the Express API",
-  "version": "1.0.0"
+  "message": "Welcome to the API",
+  "data": {
+    "message": "Welcome to the Express API",
+    "version": "1.0.0"
+  }
 }
 ```
 
@@ -61,10 +83,13 @@ Returns information about the API.
 **Response:**
 ```json
 {
-  "name": "CCIT Student API",
-  "version": "1.0.0",
-  "author": "Your Name",
-  "description": "A simple API for learning Express.js"
+  "message": "API information retrieved successfully",
+  "data": {
+    "name": "CCIT Student API",
+    "version": "1.0.0",
+    "author": "Your Name",
+    "description": "A simple API for learning Express.js"
+  }
 }
 ```
 
@@ -85,7 +110,10 @@ Greets a person by name.
 **Response:**
 ```json
 {
-  "message": "Hello, Budi! Welcome to CCIT API."
+  "message": "Greeting message",
+  "data": {
+    "message": "Hello, Budi! Welcome to CCIT API."
+  }
 }
 ```
 
@@ -103,12 +131,24 @@ Get all products.
 **Response:**
 ```json
 {
-  "success": true,
-  "count": 3,
+  "message": "Products retrieved successfully",
   "data": [
-    { "id": 1, "name": "Laptop", "price": 10000000, "stock": 10 },
-    { "id": 2, "name": "Mouse", "price": 150000, "stock": 50 },
-    { "id": 3, "name": "Keyboard", "price": 300000, "stock": 30 }
+    { 
+      "id": 1, 
+      "name": "Laptop", 
+      "price": 10000000, 
+      "stock": 10,
+      "created_at": "2026-02-19T03:00:00.000Z",
+      "updated_at": "2026-02-19T03:00:00.000Z"
+    },
+    { 
+      "id": 2, 
+      "name": "Mouse", 
+      "price": 150000, 
+      "stock": 50,
+      "created_at": "2026-02-19T03:00:00.000Z",
+      "updated_at": "2026-02-19T03:00:00.000Z"
+    }
   ]
 }
 ```
@@ -128,16 +168,23 @@ Get a single product by ID.
 **Response (Success):**
 ```json
 {
-  "success": true,
-  "data": { "id": 1, "name": "Laptop", "price": 10000000, "stock": 10 }
+  "message": "Product retrieved successfully",
+  "data": { 
+    "id": 1, 
+    "name": "Laptop", 
+    "price": 10000000, 
+    "stock": 10,
+    "created_at": "2026-02-19T03:00:00.000Z",
+    "updated_at": "2026-02-19T03:00:00.000Z"
+  }
 }
 ```
 
 **Response (Not Found):**
 ```json
 {
-  "success": false,
-  "message": "Product with id 999 not found"
+  "message": "Product not found",
+  "data": {}
 }
 ```
 
@@ -163,17 +210,23 @@ Create a new product.
 **Response (Success):**
 ```json
 {
-  "success": true,
   "message": "Product created successfully",
-  "data": { "id": 4, "name": "Monitor", "price": 2000000, "stock": 20 }
+  "data": { 
+    "id": 4, 
+    "name": "Monitor", 
+    "price": 2000000, 
+    "stock": 20,
+    "created_at": "2026-02-19T03:00:00.000Z",
+    "updated_at": "2026-02-19T03:00:00.000Z"
+  }
 }
 ```
 
 **Response (Bad Request):**
 ```json
 {
-  "success": false,
-  "message": "Please provide name, price, and stock"
+  "message": "Please provide name, price, and stock",
+  "data": null
 }
 ```
 
@@ -201,17 +254,23 @@ Update an existing product.
 **Response (Success):**
 ```json
 {
-  "success": true,
   "message": "Product updated successfully",
-  "data": { "id": 1, "name": "Laptop", "price": 12000000, "stock": 5 }
+  "data": { 
+    "id": 1, 
+    "name": "Laptop", 
+    "price": 12000000, 
+    "stock": 5,
+    "created_at": "2026-02-19T03:00:00.000Z",
+    "updated_at": "2026-02-19T03:05:00.000Z"
+  }
 }
 ```
 
 **Response (Not Found):**
 ```json
 {
-  "success": false,
-  "message": "Product with id 999 not found"
+  "message": "Product not found",
+  "data": {}
 }
 ```
 
@@ -231,17 +290,23 @@ Delete a product.
 **Response (Success):**
 ```json
 {
-  "success": true,
   "message": "Product deleted successfully",
-  "data": { "id": 2, "name": "Mouse", "price": 150000, "stock": 50 }
+  "data": { 
+    "id": 2, 
+    "name": "Mouse", 
+    "price": 150000, 
+    "stock": 50,
+    "created_at": "2026-02-19T03:00:00.000Z",
+    "updated_at": "2026-02-19T03:00:00.000Z"
+  }
 }
 ```
 
 **Response (Not Found):**
 ```json
 {
-  "success": false,
-  "message": "Product with id 999 not found"
+  "message": "Product not found",
+  "data": {}
 }
 ```
 
@@ -259,7 +324,8 @@ All endpoints may return the following error responses:
 
 ```json
 {
-  "error": "Something went wrong!"
+  "message": "Something went wrong!",
+  "data": null
 }
 ```
 

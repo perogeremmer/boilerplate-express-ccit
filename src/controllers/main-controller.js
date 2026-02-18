@@ -1,133 +1,134 @@
-// In-memory storage for products
-let products = [
-  { id: 1, name: 'Laptop', price: 10000000, stock: 10 },
-  { id: 2, name: 'Mouse', price: 150000, stock: 50 },
-  { id: 3, name: 'Keyboard', price: 300000, stock: 30 }
-];
-
-// Helper function to generate new ID
-const generateId = () => {
-  return products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-};
+import { Product } from '../models/product.js';
+import { listResponse, itemResponse, basicResponse, errorResponse } from '../utils/response.js';
 
 // ====== Simple Routes Controllers (Step 4) ======
 
 export const about = (req, res) => {
-  res.json({
+  res.json(basicResponse('API information retrieved successfully', {
     name: 'CCIT Student API',
     version: '1.0.0',
     author: 'Your Name',
     description: 'A simple API for learning Express.js'
-  });
+  }));
 };
 
 export const greet = (req, res) => {
   const name = req.params.name;
-  res.json({
+  res.json(basicResponse('Greeting message', {
     message: `Hello, ${name}! Welcome to CCIT API.`
-  });
+  }));
 };
 
 // ====== Products CRUD Controllers (Step 5) ======
 
-export const getAllProducts = (req, res) => {
-  res.json({
-    success: true,
-    count: products.length,
-    data: products
-  });
+export const getAllProducts = async (req, res) => {
+  try {
+    const products = await Product.findAll();
+    res.json(listResponse('Products retrieved successfully', products));
+  } catch (error) {
+    res.status(500).json(errorResponse('Failed to fetch products', null));
+  }
 };
 
-export const getProductById = (req, res) => {
-  const id = parseInt(req.params.id);
-  const product = products.find(p => p.id === id);
-  if (!product) {
-    return res.status(404).json({
-      success: false,
-      message: `Product with id ${id} not found`
-    });
+export const getProductById = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const product = await Product.findById(id);
+    
+    if (!product) {
+      return res.status(404).json(itemResponse('Product not found', {}));
+    }
+    
+    res.json(itemResponse('Product retrieved successfully', product));
+  } catch (error) {
+    res.status(500).json(errorResponse('Failed to fetch product', null));
   }
-  res.json({
-    success: true,
-    data: product
-  });
 };
 
-export const createProduct = (req, res) => {
-  const { name, price, stock } = req.body;
-  // Validation
-  if (!name || !price || stock === undefined) {
-    return res.status(400).json({
-      success: false,
-      message: 'Please provide name, price, and stock'
-    });
+export const createProduct = async (req, res) => {
+  try {
+    const { name, price, stock } = req.body;
+    
+    // Validation
+    if (!name || !price || stock === undefined) {
+      return res.status(400).json(basicResponse('Please provide name, price, and stock', null));
+    }
+    
+    // Create product - returns insertId only
+    const newId = await Product.create({ name, price, stock });
+    
+    // Fetch the created product data
+    const newProduct = await Product.findById(newId);
+    
+    res.status(201).json(itemResponse('Product created successfully', newProduct));
+  } catch (error) {
+    res.status(500).json(errorResponse('Failed to create product', null));
   }
-  const newProduct = {
-    id: generateId(),
-    name: name,
-    price: parseInt(price),
-    stock: parseInt(stock)
-  };
-  products.push(newProduct);
-  res.status(201).json({
-    success: true,
-    message: 'Product created successfully',
-    data: newProduct
-  });
 };
 
-export const updateProduct = (req, res) => {
-  const id = parseInt(req.params.id);
-  const { name, price, stock } = req.body;
-  const productIndex = products.findIndex(p => p.id === id);
-  if (productIndex === -1) {
-    return res.status(404).json({
-      success: false,
-      message: `Product with id ${id} not found`
-    });
+export const updateProduct = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { name, price, stock } = req.body;
+    
+    // Check if product exists
+    const existingProduct = await Product.findById(id);
+    if (!existingProduct) {
+      return res.status(404).json(itemResponse('Product not found', {}));
+    }
+    
+    // Prepare update data - use existing value if field not provided in request
+    const updateData = {
+      name: name !== undefined ? name : existingProduct.name,
+      price: price !== undefined ? price : existingProduct.price,
+      stock: stock !== undefined ? stock : existingProduct.stock
+    };
+    
+    // Update product with all fields
+    const updatedProduct = await Product.update(id, updateData);
+    
+    res.json(itemResponse('Product updated successfully', updatedProduct));
+  } catch (error) {
+    res.status(500).json(errorResponse('Failed to update product', null));
   }
-  // Update only provided fields
-  if (name) products[productIndex].name = name;
-  if (price) products[productIndex].price = parseInt(price);
-  if (stock !== undefined) products[productIndex].stock = parseInt(stock);
-  res.json({
-    success: true,
-    message: 'Product updated successfully',
-    data: products[productIndex]
-  });
 };
 
-export const deleteProduct = (req, res) => {
-  const id = parseInt(req.params.id);
-  const productIndex = products.findIndex(p => p.id === id);
-  if (productIndex === -1) {
-    return res.status(404).json({
-      success: false,
-      message: `Product with id ${id} not found`
-    });
+export const deleteProduct = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    
+    // Controller fetches product first (controller's job)
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json(itemResponse('Product not found', {}));
+    }
+    
+    // Model just executes delete (model's job)
+    await Product.delete(id);
+    
+    res.json(itemResponse('Product deleted successfully', product));
+  } catch (error) {
+    res.status(500).json(errorResponse('Failed to delete product', null));
   }
-  const deletedProduct = products.splice(productIndex, 1)[0];
-  res.json({
-    success: true,
-    message: 'Product deleted successfully',
-    data: deletedProduct
-  });
 };
 
 // ====== Existing Controllers ======
 
 export class MainController {
   static getStatus(req, res) {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    res.json(basicResponse('Server is healthy', {
+      status: 'ok',
+      timestamp: new Date().toISOString()
+    }));
   }
 }
 
 class HomeController {
   static getWelcome(req, res) {
-    res.json({
+    res.json(basicResponse('Welcome to the API', {
       message: 'Welcome to the Express API',
       version: '1.0.0'
-    });
+    }));
   }
 }
 

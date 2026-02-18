@@ -7,17 +7,29 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit",
+    "db:up": "docker-compose up -d",
+    "db:down": "docker-compose down",
+    "db:logs": "docker-compose logs -f mysql",
+    "migrate": "npx sequelize-cli db:migrate",
+    "migrate:undo": "npx sequelize-cli db:migrate:undo",
+    "migrate:undo:all": "npx sequelize-cli db:migrate:undo:all",
+    "migrate:fresh": "npx sequelize-cli db:migrate:undo:all && npx sequelize-cli db:migrate",
+    "seed": "npx sequelize-cli db:seed:all",
+    "seed:undo": "npx sequelize-cli db:seed:undo:all"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^17.2.3",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "mysql2": "^3.17.2",
+    "sequelize": "^6.37.7"
   },
   "devDependencies": {
     "jest": "^30.2.0",
+    "sequelize-cli": "^6.6.5",
     "supertest": "^7.2.2"
   },
   "jest": {
@@ -25,6 +37,8 @@
     "transform": {},
     "testMatch": [
       "**/tests/**/*.test.js"
-    ]
+    ],
+    "globalSetup": "./tests/setup.js",
+    "globalTeardown": "./tests/teardown.js"
   }
 }

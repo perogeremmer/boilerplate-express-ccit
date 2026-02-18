@@ -1,20 +1,55 @@
 import request from 'supertest';
 import app from '../src/index.js';
+import { query } from '../src/db/connection.js';
+
+// Helper to create test product
+const createTestProduct = async (productData) => {
+  const response = await request(app)
+    .post('/products')
+    .send(productData)
+    .set('Content-Type', 'application/json');
+  return response.body.data;
+};
+
+// Helper to clear all products
+const clearProducts = async () => {
+  await query('TRUNCATE TABLE products');
+};
 
 describe('Products API Tests', () => {
+  // Clear data before each test to ensure isolation
+  beforeEach(async () => {
+    await clearProducts();
+  });
+
   describe('GET /products', () => {
-    it('should return all products', async () => {
+    it('should return empty array when no products', async () => {
       const response = await request(app).get('/products');
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('success', true);
-      expect(response.body).toHaveProperty('count');
+      expect(response.body).toHaveProperty('message');
       expect(response.body).toHaveProperty('data');
       expect(Array.isArray(response.body.data)).toBe(true);
-      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.data.length).toBe(0);
+    });
+
+    it('should return all products', async () => {
+      // Create test products
+      await createTestProduct({ name: 'Laptop', price: 10000000, stock: 10 });
+      await createTestProduct({ name: 'Mouse', price: 150000, stock: 50 });
+
+      const response = await request(app).get('/products');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('message');
+      expect(response.body).toHaveProperty('data');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBe(2);
     });
 
     it('should return products with correct structure', async () => {
+      await createTestProduct({ name: 'Keyboard', price: 300000, stock: 30 });
+
       const response = await request(app).get('/products');
 
       const product = response.body.data[0];
@@ -27,21 +62,23 @@ describe('Products API Tests', () => {
 
   describe('GET /products/:id', () => {
     it('should return a single product by ID', async () => {
-      const response = await request(app).get('/products/1');
+      const created = await createTestProduct({ name: 'Test Laptop', price: 10000000, stock: 10 });
+
+      const response = await request(app).get(`/products/${created.id}`);
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('success', true);
+      expect(response.body).toHaveProperty('message');
       expect(response.body).toHaveProperty('data');
-      expect(response.body.data).toHaveProperty('id', 1);
-      expect(response.body.data).toHaveProperty('name');
+      expect(response.body.data).toHaveProperty('id', created.id);
+      expect(response.body.data).toHaveProperty('name', 'Test Laptop');
     });
 
     it('should return 404 for non-existent product', async () => {
       const response = await request(app).get('/products/999');
 
       expect(response.status).toBe(404);
-      expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('message', 'Product with id 999 not found');
+      expect(response.body).toHaveProperty('message', 'Product not found');
+      expect(response.body).toHaveProperty('data', {});
     });
   });
 
@@ -59,7 +96,6 @@ describe('Products API Tests', () => {
         .set('Content-Type', 'application/json');
 
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('message', 'Product created successfully');
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toHaveProperty('id');
@@ -80,8 +116,8 @@ describe('Products API Tests', () => {
         .set('Content-Type', 'application/json');
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('success', false);
       expect(response.body).toHaveProperty('message', 'Please provide name, price, and stock');
+      expect(response.body).toHaveProperty('data', null);
     });
 
     it('should return 400 when price is missing', async () => {
@@ -96,8 +132,8 @@ describe('Products API Tests', () => {
         .set('Content-Type', 'application/json');
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('success', false);
       expect(response.body).toHaveProperty('message', 'Please provide name, price, and stock');
+      expect(response.body).toHaveProperty('data', null);
     });
 
     it('should return 400 when stock is missing', async () => {
@@ -112,25 +148,26 @@ describe('Products API Tests', () => {
         .set('Content-Type', 'application/json');
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('success', false);
       expect(response.body).toHaveProperty('message', 'Please provide name, price, and stock');
+      expect(response.body).toHaveProperty('data', null);
     });
   });
 
   describe('PUT /products/:id', () => {
     it('should update an existing product', async () => {
+      const created = await createTestProduct({ name: 'Laptop', price: 10000000, stock: 10 });
+
       const updateData = {
         price: 15000000,
         stock: 8
       };
 
       const response = await request(app)
-        .put('/products/1')
+        .put(`/products/${created.id}`)
         .send(updateData)
         .set('Content-Type', 'application/json');
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('message', 'Product updated successfully');
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toHaveProperty('price', updateData.price);
@@ -138,21 +175,22 @@ describe('Products API Tests', () => {
     });
 
     it('should update only provided fields', async () => {
+      const created = await createTestProduct({ name: 'Laptop', price: 10000000, stock: 10 });
+
       const updateData = {
         name: 'Updated Laptop Name'
       };
 
       const response = await request(app)
-        .put('/products/1')
+        .put(`/products/${created.id}`)
         .send(updateData)
         .set('Content-Type', 'application/json');
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('success', true);
+      expect(response.body).toHaveProperty('message', 'Product updated successfully');
       expect(response.body.data).toHaveProperty('name', updateData.name);
-      // Other fields should still exist
-      expect(response.body.data).toHaveProperty('price');
-      expect(response.body.data).toHaveProperty('stock');
+      expect(response.body.data).toHaveProperty('price', 10000000); // unchanged
+      expect(response.body.data).toHaveProperty('stock', 10); // unchanged
     });
 
     it('should return 404 for non-existent product', async () => {
@@ -166,41 +204,33 @@ describe('Products API Tests', () => {
         .set('Content-Type', 'application/json');
 
       expect(response.status).toBe(404);
-      expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('message', 'Product with id 999 not found');
+      expect(response.body).toHaveProperty('message', 'Product not found');
+      expect(response.body).toHaveProperty('data', {});
     });
   });
 
   describe('DELETE /products/:id', () => {
     it('should delete an existing product', async () => {
-      // First, get the current products count
-      const getResponse = await request(app).get('/products');
-      const initialCount = getResponse.body.count;
+      const created = await createTestProduct({ name: 'To Delete', price: 100000, stock: 5 });
 
-      // Create a product to delete
-      const newProduct = await request(app)
-        .post('/products')
-        .send({ name: 'To Delete', price: 100000, stock: 5 })
-        .set('Content-Type', 'application/json');
-      
-      const productIdToDelete = newProduct.body.data.id;
-
-      // Delete the product
-      const deleteResponse = await request(app).delete(`/products/${productIdToDelete}`);
+      const deleteResponse = await request(app).delete(`/products/${created.id}`);
 
       expect(deleteResponse.status).toBe(200);
-      expect(deleteResponse.body).toHaveProperty('success', true);
       expect(deleteResponse.body).toHaveProperty('message', 'Product deleted successfully');
       expect(deleteResponse.body).toHaveProperty('data');
-      expect(deleteResponse.body.data).toHaveProperty('id', productIdToDelete);
+      expect(deleteResponse.body.data).toHaveProperty('id', created.id);
+
+      // Verify it's actually deleted
+      const getResponse = await request(app).get(`/products/${created.id}`);
+      expect(getResponse.status).toBe(404);
     });
 
     it('should return 404 for non-existent product', async () => {
       const response = await request(app).delete('/products/999');
 
       expect(response.status).toBe(404);
-      expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('message', 'Product with id 999 not found');
+      expect(response.body).toHaveProperty('message', 'Product not found');
+      expect(response.body).toHaveProperty('data', {});
     });
   });
 });
