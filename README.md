@@ -280,6 +280,8 @@ module.exports = {
 
 > ⚠️ **Note:** Use `module.exports` (CommonJS) not `export` (ES modules) in `.cjs` files.
 
+> 📚 **For checking other Sequelize data types, please refer to the official documentation:** https://sequelize.org/docs/v6/core-concepts/model-basics/#data-types
+
 **Step 3: Run the migration**
 ```bash
 npm run migrate
