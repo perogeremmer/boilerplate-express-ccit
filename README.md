@@ -455,12 +455,59 @@ npm run migrate:fresh
 
 #### Seeders
 ```bash
-# Run all seeders
+# Run all seeders (insert sample data)
 npm run seed
 
-# Undo all seeders
+# Undo all seeders (remove sample data only, keep tables)
 npm run seed:undo
 ```
+
+#### Clear/Reset Data
+
+```bash
+# Option 1: Remove seed data only (safest)
+npm run seed:undo
+
+# Option 2: Clear ALL tables but keep structure (nuclear option)
+npm run migrate:undo:all
+
+# Option 3: Reset everything and start fresh
+npm run migrate:fresh
+npm run seed
+```
+
+**⚠️ Important Differences:**
+| Command | What it does | Data | Tables |
+|---------|-------------|------|--------|
+| `seed:undo` | Removes seed data | ❌ Deleted | ✅ Kept |
+| `migrate:undo:all` | Removes ALL tables | ❌ Deleted | ❌ Deleted |
+| `migrate:fresh` | Reset + re-run migrations | ❌ Deleted | ✅ Re-created |
+
+> **For students:** Usually you just need `seed:undo` to clear test data, then `seed` to add fresh data.
+
+### Manual Testing Workflow (Postman/Insomnia)
+
+When manually testing with Postman and you want to **reset everything**:
+
+```bash
+# Reset database to empty state (clear all data, recreate tables)
+npm run migrate:fresh
+
+# Then add fresh seed data
+npm run seed
+
+# Now you have clean 50 products to test with!
+```
+
+**Quick reset command:**
+```bash
+npm run migrate:fresh && npm run seed
+```
+
+This is useful when:
+- You've created/deleted many products during testing
+- You want to start fresh with the original 50 products
+- Students are sharing the same database for testing
 
 ---
 
